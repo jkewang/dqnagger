@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='ASCII'?>
+<sdf version="1.4">
+  <world name="road test">
+    <scene>
+      <ambient>120 120 120 255</ambient>
+      <sky>
+        <clouds>
+          <speed>12</speed>
+        </clouds>
+        <time>10:00</time>
+      </sky>
+    </scene>
+    <include>
+      <uri>model://highway_plane_15m</uri>
+      <pose>-15 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://highway_plane_15m</uri>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://highway_plane_15m</uri>
+      <pose>15 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://highway_plane_15m</uri>
+      <pose>30 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://highway_plane_15m</uri>
+      <pose>45 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+  </world>
+</sdf>
