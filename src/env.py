@@ -87,7 +87,7 @@ class Env(object):
                 self.car_nums -= 1
                 break
 
-        car = car.reset(init_x,init_y,init_v)
+        car.reset(init_x,init_y,init_v)
 
     def step(self,tele_action):
         for car in self.Cars:
@@ -189,6 +189,9 @@ class Env(object):
         else:
             reward = -0.03 + (-0.01)*car.vx
 
+        if (car.name == "unit_box_0") and done==1:
+            print("done!done!!!!!!!!!!!!!!!!!!!!!!!")
+
         return reward,done
 
     def add_car(self):
@@ -220,6 +223,7 @@ class Env(object):
         else:
             self.reset(self.Waiting_cars[0])
             self.Cars.append(self.Waiting_cars[0])
+            self.car_nums += 1
             self.Waiting_cars.remove(self.Waiting_cars[0])
             self.Waiting_car_nums -= 1
 
