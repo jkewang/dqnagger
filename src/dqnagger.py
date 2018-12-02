@@ -53,8 +53,8 @@ if __name__ == '__main__':
             talker(car.modelstate)
         for car in multi_env.Waiting_cars:
             talker(car.modelstate)
+        
         rate.sleep()
-
 
 
 

@@ -52,7 +52,7 @@ class Env(object):
             self.Cars.append(Car(name_list[i],init_x[i],init_y[i],init_v[i]))
         print("init done!")
 
-    def reset(self,car):
+    def reset(self,car,FROM_CARS):
         success_reset = 0
         try_times = 0
         while success_reset == 0:
@@ -69,7 +69,7 @@ class Env(object):
                 init_y = 4.2
                 init_v = -2.5+random.random()
 
-            init_x = float(random.randint(0,1600)/100)
+            init_x = float(random.randint(1200,1600)/100)
 
             for othercar in self.Cars:
                 if othercar != car:
@@ -78,16 +78,25 @@ class Env(object):
 
             if try_times >= 30:
                 print("start_zone is full!")
-                self.Waiting_cars.append(car)
-                init_x = random.randint(100,10000)
-                init_y = random.randint(100,10000)
-                init_v = 0
-                self.Cars.remove(car)
-                self.Waiting_car_nums += 1
-                self.car_nums -= 1
-                break
+                if FROM_CARS == 1:
+                    self.Waiting_cars.append(car)
+                    init_x = random.randint(100,10000)
+                    init_y = random.randint(100,10000)
+                    init_v = 0
+                    self.Cars.remove(car)
+                    self.Waiting_car_nums += 1
+                    self.car_nums -= 1
+                    car.reset(init_x,init_y,init_v)
+                    return 0
+                else:
+                    init_x = random.randint(100,10000)
+                    init_y = random.randint(100,10000)
+                    init_v = 0
+                    car.reset(init_x,init_y,init_v)
+                    return 0
 
         car.reset(init_x,init_y,init_v)
+        return 1
 
     def step(self,tele_action):
         for car in self.Cars:
@@ -112,10 +121,10 @@ class Env(object):
                 print("ep_r:",round(car.ep_r,2),"epsilon:",nn.EPSILON)
                 print("now_cars:",self.car_nums)
                 print("waiting_cars:",self.Waiting_car_nums)
-                self.reset(car)
+                success = self.reset(car,FROM_CARS=1)
 
         if (nn.EPSILON<0.9):
-            nn.EPSILON += 0.0000002
+            nn.EPSILON += 0.00002
         if (nn.MEMORY_COUNTER>nn.MEMORY_CAPACITY):
             nn.learn()
 
@@ -124,7 +133,7 @@ class Env(object):
             if (car.x > 0) and (car.x<16):
                 CAR_IN_START += 1
 
-        if CAR_IN_START < 6:
+        if CAR_IN_START < 2:
             self.add_car()
 
     def perception(self,car):
@@ -221,11 +230,12 @@ class Env(object):
             car = Car(name, init_x, init_y, init_v)
             self.Cars.append(car)
         else:
-            self.reset(self.Waiting_cars[0])
-            self.Cars.append(self.Waiting_cars[0])
-            self.car_nums += 1
-            self.Waiting_cars.remove(self.Waiting_cars[0])
-            self.Waiting_car_nums -= 1
+            success = self.reset(self.Waiting_cars[0],FROM_CARS=0)
+            if success == 1:
+                self.Cars.append(self.Waiting_cars[0])
+                self.car_nums += 1
+                self.Waiting_cars.remove(self.Waiting_cars[0])
+                self.Waiting_car_nums -= 1
 
         
         

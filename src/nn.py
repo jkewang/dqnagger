@@ -126,7 +126,7 @@ def choose_action(s_sliding, s_others):
         #zhongjian = sess.run(myreal_input, feed_dict={tf_s_sliding: s_sliding, tf_s_others: s_others})
         #print(zhongjian)
         actions_value = sess.run(q, feed_dict={tf_s_sliding: s_sliding, tf_s_others: s_others})
-        #print(actions_value)
+        print(actions_value)
         action = np.argmax(actions_value)
     else:
         action = np.random.randint(0, N_ACTIONS)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from gazebo_msgs.msg import ModelState
+import random
 
 class Car(object):
     def __init__(self,name,x,y,vx):
@@ -17,6 +18,7 @@ class Car(object):
         self.ep_r = 0
         self.done = 0
         self.waiting = 0
+        self.MAXSPEED = (float(random.randint(0,400))/100)+4
         self.modelstate = ModelState()
         self.modelstate.model_name = self.name
         self.modelstate.pose.position.x = self.x
@@ -36,6 +38,7 @@ class Car(object):
         self.ep_r = 0
         self.done = 0
         self.waiting = 0
+        self.MAXSPEED = (float(random.randint(0,400))/100)+4
         self.modelstate = ModelState()
         self.modelstate.model_name = self.name
         self.modelstate.pose.position.x = self.x
@@ -45,20 +48,20 @@ class Car(object):
         return x,y,vx,self.vy
 
     def update_v(self,a):
-        if(a==0 and self.vx > -4):
-            self.vx -= 0.1
+        if(a==0 and self.vx > -self.MAXSPEED):
+            self.vx -= 0.03
             self.vy = 0
         if(a==0 and self.vy !=0):
             self.vy = 0
         if(a==1 and self.vx < -2):
-            self.vx += 0.1
+            self.vx += 0.03
             self.vy = 0
-        if(a==2 and self.vy>-1):
+        if(a==2 and self.vy>-2):
             self.vx = self.vx
-            self.vy -= 0.2
-        if(a==3 and self.vy<1):
+            self.vy -= 0.02
+        if(a==3 and self.vy<2):
             self.vx =self.vx
-            self.vy += 0.2
+            self.vy += 0.02
 
         self.lastaction = a
 
