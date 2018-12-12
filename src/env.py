@@ -14,6 +14,7 @@ class Env(object):
         self.car_nums = 9
         self.used_car_nums = 9
         self.Waiting_car_nums = 0
+        self.recorder = open('pretrained_data.txt','w')
         #generte 9 cars' position and velocity
         print("initialing")
         #left 3:
@@ -105,7 +106,9 @@ class Env(object):
                 action = nn.choose_action(car.state[0],car.state[1])
             else:
                 action = tele_action
-            
+                data = (str(car.state[0]) + '!' + str(car.state[1]) + '@' + str(action) + '#')
+                self.recorder.write(data)
+
             car.update_v(action)
         for car in self.Cars:
             car.play()
