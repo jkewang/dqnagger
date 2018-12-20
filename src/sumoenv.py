@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import os,sys
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'],'tools')
@@ -15,33 +16,49 @@ import traci
 import traci.constants as tc
 import math
 import numpy as np
+import random
 
 class TrafficEnv(object):
 
     def __init__(self):
         traci.start(sumoCmd)
-
         self.cross_mapping={
-            "-gneE1" : "cross_3",
-            "gneE8" : "cross_4",
-            "gneE10" : "cross_5",
-            "gneE5" : "cross_2",
-            "gneE6" : "cross_1"
+            "-gneE0": "cross_0",
+            "gneE0": "cross_3",
+            "-gneE1": "cross_3",
+            "gneE1": "cross_6",
+            "-gneE2": "cross_6",
+            "gneE2": "cross_7",
+            "-gneE3": "cross_7",
+            "gneE3": "cross_8",
+            "-gneE4": "cross_8",
+            "gneE4": "cross_5",
+            "-gneE5": "cross_5",
+            "gneE5": "cross_2",
+            "-gneE6": "cross_2",
+            "gneE6": "cross_1",
+            "-gneE7": "cross_1",
+            "gneE7": "cross_0",
+            "-gneE8": "cross_3",
+            "gneE8": "cross_4",
+            "-gneE9": "cross_4",
+            "gneE9": "cross_7",
+            "-gneE10": "cross_4",
+            "gneE10": "cross_5",
+            "-gneE11": "cross_4",
+            "gneE11": "cross_1"
         }
-        self.light_mapping={
-            "cross_3":-3,
-            "cross_4":-3,
-            "cross_5":-1,
-            "cross_2":-1,
-            "cross_1": 1,
-            "cross_6": 1
-        }
+
         self.trafficPos_mapping={
+            "cross_0": [-1000, 1000],
+            "cross_1": [0, 1000],
+            "cross_2": [1000, 1000],
             "cross_3": [-1000,0],
             "cross_4": [0,0],
             "cross_5": [1000,0],
-            "cross_2": [1000,1000],
-            "cross_1": [0,1000]
+            "cross_6": [-1000,-1000],
+            "cross_7": [0,-1000],
+            "cross_8": [1000,-1000]
         }
 
         #Env --lanechange.duration
@@ -90,6 +107,27 @@ class TrafficEnv(object):
         traci.load(["-c",config_path,"--collision.action","remove","--no-step-log","--no-warnings","--no-duration-log"])
         print("Resetting...")
         #traci.vehicle.add("agent", "agent_route")
+
+        random_direct = random.randint(0,1)
+        random_edge = random.randint(3,12)
+        if random_direct == 0:
+            direct = '-'
+        else:
+            direct = ''
+        if random_edge != 12:
+            edge = str(random_edge)
+        else:
+            edge = '0'
+        dest_name = direct + "gneE" + edge
+        print(dest_name)
+
+        pos = self.trafficPos_mapping[self.cross_mapping[dest_name]]
+        self.end_x,self.end_y = pos[0],pos[1]
+
+        traci.vehicle.changeTarget("agent",dest_name)
+        self.Route = traci.vehicle.getRoute(self.AgentId)
+        print(self.Route)
+
         traci.vehicle.setColor("agent", (255, 0, 0, 255))
         traci.vehicle.setSpeed("agent", 10)
         traci.gui.trackVehicle('View #0', "agent")
@@ -120,8 +158,8 @@ class TrafficEnv(object):
         #    2    |    change left
         #    3    |    change right
         #    4    |    do nothing
-        traci.vehicle.setSpeedMode(self.AgentId, 0)
-        traci.vehicle.setLaneChangeMode(self.AgentId, 0)
+        traci.vehicle.setSpeedMode(self.AgentId,0)
+        traci.vehicle.setLaneChangeMode(self.AgentId,0)
 
         position = traci.vehicle.getSubscriptionResults(self.AgentId)[tc.VAR_POSITION]
         if (abs(position[0])+abs(position[1]))<999:
@@ -149,9 +187,6 @@ class TrafficEnv(object):
             if laneindex > self.minLaneNumber:
                 traci.vehicle.changeLane(self.AgentId,laneindex-1,100)
             traci.vehicle.setSpeed(self.AgentId, traci.vehicle.getSubscriptionResults(self.AgentId)[tc.VAR_SPEED])
-        elif action == 4:
-            traci.vehicle.setSpeed(self.AgentId,traci.vehicle.getSubscriptionResults(self.AgentId)[tc.VAR_SPEED])
-
         traci.simulationStep()
         self.VehicleIds = traci.vehicle.getIDList()
 
@@ -191,7 +226,6 @@ class TrafficEnv(object):
             self.oldDistance = self.nowDistance
             if breaklight == 1:
                 reward -= 4
-                print("break_light")
             if breakstop == 1:
                 reward -= 1
             if wronglane == 1:
@@ -261,10 +295,26 @@ class TrafficEnv(object):
         breaklight = 0
         breakstop = 0
 
+        next_roadid = ""
+        for i in range(len(self.Route)):
+            if now_roadid == self.Route[i] and (i != len(self.Route)-1):
+                next_roadid = self.Route[i+1]
+
         try:
             nextTlsId = self.cross_mapping[now_roadid]
             rygState = traci.trafficlight.getRedYellowGreenState(nextTlsId)
-            nextLight = rygState[self.light_mapping[nextTlsId]]
+            links = traci.trafficlight.getControlledLinks(nextTlsId)
+            index = 0
+            
+            for i in range(len(links)):
+                str_1 = links[i][0][0]
+                edge_1 = str_1[0:str_1.rfind("_")]
+                str_2 = links[i][0][1]
+                edge_2 = str_2[0:str_2.rfind("_")]
+                if edge_1 == now_roadid and edge_2 == next_roadid:
+                    index = i
+                    break
+            nextLight = rygState[index]
             x,y = self.trafficPos_mapping[nextTlsId][0],self.trafficPos_mapping[nextTlsId][1]
             x_v,y_v = traci.vehicle.getPosition(self.AgentId)
             #print("trying")
@@ -284,15 +334,23 @@ class TrafficEnv(object):
                 breakstop = 1
             else:
                 breakstop = 0
-
             rygState = traci.trafficlight.getRedYellowGreenState(self.lastTlsTd)
-            nextLight = rygState[self.light_mapping[self.lastTlsTd]]
+            links = traci.trafficlight.getControlledLinks(self.lastTlsTd)
+            index = 0
+            for i in range(len(links)):
+                str_1 = links[i][0][0]
+                edge_1 = str_1[0:str_1.rfind("_")]
+                str_2 = links[i][0][1]
+                edge_2 = str_2[0:str_2.rfind("_")]
+                if edge_1 == now_roadid and edge_2 == next_roadid:
+                    index = i
+                    break
+            nextLight = rygState[index]
+
             #nextLight='g'
             distance = 100
             if nextLight == ('r' or 'R'):
                 breaklight = 1
-            else:
-                breaklight = -1
             self.x_v,self.y_v = x_v,y_v
 
             #print("except")
@@ -345,4 +403,5 @@ class TrafficEnv(object):
             wronglane = 1
 
         return [self.OccMapState,self.VehicleState,self.RoadState],breaklight,breakstop,wronglane
+
 
